@@ -352,8 +352,10 @@ function TaskItem({ task, updateTask, deleteTask, onPreview }) {
 
   const removeSubtask = (subId, e) => {
     e.stopPropagation();
-    const updatedSubtasks = task.subtasks.filter(s => s.id !== subId);
-    updateTask(task.id, { subtasks: updatedSubtasks });
+    if (window.confirm('N\'estàs segur que vols eliminar aquest pas/cim?')) {
+      const updatedSubtasks = task.subtasks.filter(s => s.id !== subId);
+      updateTask(task.id, { subtasks: updatedSubtasks });
+    }
   };
 
   const uploadImage = async (e) => {
@@ -379,7 +381,9 @@ function TaskItem({ task, updateTask, deleteTask, onPreview }) {
   };
 
   const removeImage = (imgUrl) => {
-    updateTask(task.id, { images: task.images.filter(url => url !== imgUrl) });
+    if (window.confirm('Segur que vols eliminar aquesta foto del record?')) {
+      updateTask(task.id, { images: task.images.filter(url => url !== imgUrl) });
+    }
   };
 
   const uploadSubtaskImage = async (e, subId) => {
@@ -410,10 +414,12 @@ function TaskItem({ task, updateTask, deleteTask, onPreview }) {
   };
 
   const removeSubtaskImage = (subId) => {
-    const updatedSubtasks = task.subtasks.map(s =>
-      s.id === subId ? { ...s, image: undefined } : s
-    );
-    updateTask(task.id, { subtasks: updatedSubtasks });
+    if (window.confirm('Segur que vols eliminar la foto d\'aquesta sub-tasca?')) {
+      const updatedSubtasks = task.subtasks.map(s =>
+        s.id === subId ? { ...s, image: undefined } : s
+      );
+      updateTask(task.id, { subtasks: updatedSubtasks });
+    }
   };
 
   const addTag = (e) => {
