@@ -15,6 +15,7 @@ export default function App() {
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
 
   // Age calculation
   const birthDate = new Date('2001-01-09');
@@ -244,6 +245,7 @@ export default function App() {
             task={task}
             updateTask={updateTask}
             deleteTask={deleteTask}
+            onPreview={setPreviewImage}
           />
         ))}
 
@@ -260,11 +262,18 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {previewImage && (
+        <div className="image-preview-overlay" onClick={() => setPreviewImage(null)}>
+          <button className="close-preview-btn"><X size={32} /></button>
+          <img src={previewImage} alt="Preview" className="image-preview" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }
 
-function TaskItem({ task, updateTask, deleteTask }) {
+function TaskItem({ task, updateTask, deleteTask, onPreview }) {
   const [expanded, setExpanded] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isUploadingGlobal, setIsUploadingGlobal] = useState(false);
@@ -566,7 +575,7 @@ function TaskItem({ task, updateTask, deleteTask }) {
 
                 {sub.image && (
                   <div className="subtask-image-wrapper">
-                    <img src={sub.image} alt={sub.title} />
+                    <img style={{ cursor: 'pointer' }} src={sub.image} alt={sub.title} onClick={(e) => { e.stopPropagation(); onPreview(sub.image); }} />
                     <button
                       type="button"
                       className="remove-image-btn"
@@ -619,7 +628,7 @@ function TaskItem({ task, updateTask, deleteTask }) {
               <div className="images-grid">
                 {task.images.map((imgUrl, i) => (
                   <div key={i} className="image-card">
-                    <img src={imgUrl} alt="Record" />
+                    <img style={{ cursor: 'pointer' }} src={imgUrl} alt="Record" onClick={(e) => { e.stopPropagation(); onPreview(imgUrl); }} />
                     <button
                       type="button"
                       className="remove-image-btn"
