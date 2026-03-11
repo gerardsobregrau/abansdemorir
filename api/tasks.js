@@ -16,8 +16,8 @@ try {
     console.log("No hi ha configuració de Redis.");
 }
 
-// Fallback en memòria (es perd si el serverless s'atura, però serveix per desenvolupar si no hi ha Redis)
-let inMemoryTasks = null;
+// Fallback local per desenvolupament (grava a disc per evitar que un "git push" o reinici del server esborri l'estat en memòria)
+const LOCAL_DB_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.local-tasks-db.json');
 
 function loadDefaultTasks() {
     const currentFilePath = fileURLToPath(import.meta.url);
@@ -61,21 +61,30 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
         try {
-            let tasks;
+            let tasks = null;
             if (redis) {
                 tasks = await redis.get(`tasks_${userId}`);
+                if (typeof tasks === 'string') tasks = JSON.parse(tasks);
             } else {
-                tasks = inMemoryTasks;
+                // Read from local JSON file instead of ephemeral RAM
+                try {
+                    if (fs.existsSync(LOCAL_DB_PATH)) {
+                        tasks = JSON.parse(fs.readFileSync(LOCAL_DB_PATH, 'utf8'));
+                    }
+                } catch (err) {
+                    console.error("Error read db fallback", err);
+                }
             }
 
             // Si la base de dades està buida, retonem el repte per defecte.
             if (!tasks || (Array.isArray(tasks) && tasks.length === 0)) {
                 tasks = loadDefaultTasks();
                 // Guardem l'estat per defecte
-                if (redis) await redis.set(`tasks_${userId}`, JSON.stringify(tasks));
-                else inMemoryTasks = tasks;
-            } else if (typeof tasks === 'string') {
-                tasks = JSON.parse(tasks);
+                if (redis) {
+                    await redis.set(`tasks_${userId}`, JSON.stringify(tasks));
+                } else {
+                    fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(tasks, null, 2));
+                }
             }
 
             return res.status(200).json(tasks);
@@ -92,7 +101,7 @@ export default async function handler(req, res) {
             if (redis) {
                 await redis.set(`tasks_${userId}`, JSON.stringify(newTasks));
             } else {
-                inMemoryTasks = newTasks;
+                fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(newTasks, null, 2));
             }
 
             return res.status(200).json({ success: true });
