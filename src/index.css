@@ -237,7 +237,7 @@ button.icon-btn.done {
   min-width: 0;
 }
 
-input.task-title-input {
+.task-title-input {
   font-size: 1.1rem;
   font-weight: 400;
   flex: 1;
@@ -253,13 +253,16 @@ input.task-title-input {
   word-wrap: break-word;
   /* Allows text to wrap */
   white-space: pre-wrap;
+  resize: none;
+  padding: 0;
+  margin: 0;
 }
 
-input.task-title-input:focus {
+.task-title-input:focus {
   border-bottom: 1px solid var(--border-dark);
 }
 
-.task-item.is-done input.task-title-input {
+.task-item.is-done .task-title-input {
   color: var(--text-muted);
 }
 
@@ -403,6 +406,9 @@ input.task-title-input:focus {
   width: 100%;
   word-wrap: break-word;
   white-space: pre-wrap;
+  resize: none;
+  padding: 0;
+  margin: 0;
 }
 
 .subtask-name-input:focus {
