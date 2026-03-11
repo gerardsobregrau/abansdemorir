@@ -99,8 +99,13 @@ export default function App() {
     ]);
   };
 
-  // Safe-guard desactivat: La informació es desa exclusivament a la Base de Dades (Vercel KV / API)
-  // i només es llegeix el calaix antic un sol cop a loadLocalDefault per si algun cop falla.
+  // Safe-guard REACTIVAT: Sempre tenir una còpia fresca de l'estat actual al LocalStorage
+  // (Així si estàs en local provant i hi ha un reload de Vite, mai perdràs la feina no guardada a l'API)
+  useEffect(() => {
+    if (!loading && tasks.length > 0) {
+      localStorage.setItem('abansdemorir-backup', JSON.stringify(tasks));
+    }
+  }, [tasks, loading]);
 
   // Synchronize Tasks to API
   const syncToApi = async (updatedTasks) => {
