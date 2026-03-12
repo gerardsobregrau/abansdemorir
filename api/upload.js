@@ -22,16 +22,27 @@ export default async function handler(req, res) {
 
     try {
         const filename = req.query.filename || 'imatge.png';
+        const token = process.env.BLOB_READ_WRITE_TOKEN;
+
+        if (!token) {
+            console.error("Vercel Blob Error: BLOB_READ_WRITE_TOKEN no està configurat a les variables d'entorn.");
+            return res.status(500).json({ 
+                error: "La variable d'entorn BLOB_READ_WRITE_TOKEN no està configurada. Ves al panell de Vercel > Storage > Blob per connectar-lo al projecte." 
+            });
+        }
 
         // Utilitzem Vercel Blob per penjar la imatge
         const blob = await put(filename, req, {
             access: 'public',
-            token: process.env.BLOB_READ_WRITE_TOKEN,
+            token: token,
         });
 
         return res.status(200).json(blob);
     } catch (error) {
-        console.error("Error pujant la imatge a Vercel Blob:", error);
-        return res.status(500).json({ error: "S'ha produït un error en intentar pujar el fitxer. Assegura't de tenir Vercel Blob (@vercel/blob) configurat al projecte." });
+        console.error("Error pujant la imatge a Vercel Blob:", error.message);
+        return res.status(500).json({ 
+            error: "S'ha produït un error en intentar pujar el fitxer.",
+            details: error.message
+        });
     }
 }

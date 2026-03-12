@@ -367,11 +367,14 @@ function TaskItem({ task, updateTask, deleteTask, onPreview }) {
         method: 'POST',
         body: file,
       });
-      if (!response.ok) throw new Error("Upload failed");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Upload failed");
+      }
       const blob = await response.json();
       updateTask(task.id, { images: [...task.images, blob.url] });
     } catch (err) {
-      alert("Error penjant la imatge. Has configurat Vercel Blob?");
+      alert(`Error penjant la imatge: ${err.message}`);
       console.error(err);
     } finally {
       setIsUploadingGlobal(false);
@@ -395,7 +398,10 @@ function TaskItem({ task, updateTask, deleteTask, onPreview }) {
         method: 'POST',
         body: file,
       });
-      if (!response.ok) throw new Error("Upload failed");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Upload failed");
+      }
       const blob = await response.json();
 
       const updatedSubtasks = task.subtasks.map(s =>
@@ -403,7 +409,7 @@ function TaskItem({ task, updateTask, deleteTask, onPreview }) {
       );
       updateTask(task.id, { subtasks: updatedSubtasks });
     } catch (err) {
-      alert("Error penjant la foto. Assegura't de tenir Vercel Blob actiu.");
+      alert(`Error penjant la foto: ${err.message}`);
       console.error(err);
     } finally {
       setIsUploadingSubtask(false);
