@@ -1,19 +1,16 @@
-import { Redis } from '@upstash/redis'
+import { createClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-let redis = null;
+let supabase = null;
 try {
-    // Configura Upstash Redis només si les credencials existeixen
-    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-        redis = new Redis({
-            url: process.env.UPSTASH_REDIS_REST_URL,
-            token: process.env.UPSTASH_REDIS_REST_TOKEN,
-        })
+    // Configura Supabase només si les credencials existeixen
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+        supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
     }
 } catch (e) {
-    console.log("No hi ha configuració de Redis.");
+    console.log("No hi ha configuració de Supabase.");
 }
 
 // Fallback local per desenvolupament (grava a disc per evitar que un "git push" o reinici del server esborri l'estat en memòria)
@@ -62,9 +59,19 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
         try {
             let tasks = null;
-            if (redis) {
-                tasks = await redis.get(`tasks_${userId}`);
-                if (typeof tasks === 'string') tasks = JSON.parse(tasks);
+            if (supabase) {
+                const { data, error } = await supabase
+                    .from('user_tasks')
+                    .select('data')
+                    .eq('id', userId)
+                    .single()
+                
+                if (data && data.data) {
+                    tasks = data.data;
+                    if (typeof tasks === 'string') {
+                        try { tasks = JSON.parse(tasks); } catch(e) {}
+                    }
+                }
             } else {
                 // Read from local JSON file instead of ephemeral RAM
                 try {
@@ -80,8 +87,10 @@ export default async function handler(req, res) {
             if (!tasks || (Array.isArray(tasks) && tasks.length === 0)) {
                 tasks = loadDefaultTasks();
                 // Guardem l'estat per defecte
-                if (redis) {
-                    await redis.set(`tasks_${userId}`, JSON.stringify(tasks));
+                if (supabase) {
+                    await supabase
+                        .from('user_tasks')
+                        .upsert({ id: userId, data: tasks })
                 } else {
                     fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(tasks, null, 2));
                 }
@@ -98,8 +107,10 @@ export default async function handler(req, res) {
         try {
             const newTasks = req.body;
 
-            if (redis) {
-                await redis.set(`tasks_${userId}`, JSON.stringify(newTasks));
+            if (supabase) {
+                await supabase
+                    .from('user_tasks')
+                    .upsert({ id: userId, data: newTasks })
             } else {
                 fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(newTasks, null, 2));
             }
